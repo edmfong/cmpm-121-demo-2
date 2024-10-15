@@ -40,6 +40,7 @@ h1 {
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  flex: block;
 }
 
 .logo {
@@ -99,4 +100,8 @@ canvas {
   border-radius: 12px; /* Rounded corners */
   box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3); /* Drop shadow for lifted effect */
   transition: box-shadow 0.3s ease; /* Smooth transition for shadow changes */
+}
+
+#buttonContainer button {
+  margin: 5px;
 }
