@@ -93,3 +93,10 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+canvas {
+  border: 2px solid black; /* Border size and color */
+  border-radius: 12px; /* Rounded corners */
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3); /* Drop shadow for lifted effect */
+  transition: box-shadow 0.3s ease; /* Smooth transition for shadow changes */
+}
