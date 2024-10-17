@@ -96,12 +96,46 @@ button:focus-visible {
 }
 
 canvas {
-  border: 2px solid black; /* Border size and color */
-  border-radius: 12px; /* Rounded corners */
-  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3); /* Drop shadow for lifted effect */
-  transition: box-shadow 0.3s ease; /* Smooth transition for shadow changes */
+  border: 2px solid black;
+  border-radius: 12px;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.3s ease;
+  margin-right: 20px;
+}
+
+#buttonContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 110px;
+  margin: 0 auto;
 }
 
 #buttonContainer button {
-  margin: 5px;
+  width: 100px;
+  height: 50px;
+}
+
+#colorContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 110px;
+  margin: 0 auto;
+  margin-right: 20px;
+}
+
+#colorContainer button {
+  width: 50px;
+  height: 50px;
+}
+
+#wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+#brushSizeInputContainer input {
+  width: 17px;
 }
