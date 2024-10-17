@@ -1,5 +1,6 @@
 import "./style.css";
-import { Stroke } from "./stroke.ts"; // Import the MarkerLine class
+import { Stroke } from "./stroke.ts";
+import { ToolPreview } from "./toolpreview.ts";
 
 const APP_NAME = "Sketchpad";
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -24,7 +25,7 @@ app.append(colorContainer);
 
 // Create a wrapper for the canvas and color container
 const wrapper = document.createElement("div");
-wrapper.id = "wrapper"; // Add an ID for styling
+wrapper.id = "wrapper";
 
 // Append canvas and color container to the wrapper
 wrapper.appendChild(canvas);
@@ -47,6 +48,8 @@ let redoStack: Stroke[] = [];
 let brushColor = "black"; // Default color
 let brushSize = 1; // Default size
 let previousBrushSize = 1;
+
+let toolPreview: ToolPreview | null = null; // Nullable reference to the preview
 
 // Create a div to store the buttons
 const buttonContainer = document.createElement("div");
@@ -102,18 +105,32 @@ canvas.addEventListener('mousedown', (e) => {
     y = e.offsetY;
     isDrawing = true;
     currentStroke = new Stroke(x, y, brushColor, brushSize); // Pass color and size
+    toolPreview = null; // Hide the preview when the mouse is down
 });
 
 canvas.addEventListener('mousemove', (e) => {
+    x = e.offsetX;
+    y = e.offsetY;
+    
     if (isDrawing && currentStroke) {
-        x = e.offsetX;
-        y = e.offsetY;
         currentStroke.drag(x, y); // Add points to the stroke
 
         // Redraw to show the current stroke while dragging
         redrawFromDisplayList(); // Redraw all existing strokes
         currentStroke.display(context!); // Display the current stroke
+    } 
+    else {
+        // Show tool preview if not drawing
+        toolPreview = new ToolPreview(x, y, brushSize, brushColor);
+        redrawFromDisplayList();
+        toolPreview.draw(context!); // Draw the preview
     }
+});
+
+// Mouse leave event to remove the preview when the cursor leaves the canvas
+canvas.addEventListener('mouseleave', () => {
+    toolPreview = null;
+    redrawFromDisplayList(); // Redraw strokes without the preview
 });
 
 

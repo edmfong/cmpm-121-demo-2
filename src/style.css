@@ -40,7 +40,10 @@ h1 {
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-  flex: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .logo {
@@ -100,7 +103,6 @@ canvas {
   border-radius: 12px;
   box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
   transition: box-shadow 0.3s ease;
-  margin-right: 20px;
 }
 
 #buttonContainer {
@@ -108,7 +110,7 @@ canvas {
   flex-wrap: wrap;
   gap: 10px;
   width: 110px;
-  margin: 0 auto;
+  margin-left: 20px;
 }
 
 #buttonContainer button {
@@ -122,7 +124,7 @@ canvas {
   gap: 10px;
   width: 110px;
   margin: 0 auto;
-  margin-right: 20px;
+  margin-left: 20px;
 }
 
 #colorContainer button {
@@ -132,10 +134,16 @@ canvas {
 
 #wrapper {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  align-items: flex-start; /* Align the controls to the top of the canvas */
+  justify-content: center; /* Center contents inside the wrapper */
+  position: relative; /* No need for absolute */
+  margin-left: calc(50%);
 }
 
 #brushSizeInputContainer input {
   width: 17px;
+}
+
+canvas:hover {
+  cursor: none;
 }
