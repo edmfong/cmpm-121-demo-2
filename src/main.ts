@@ -43,8 +43,9 @@ let isDrawing = false;
 let x = 0;
 let y = 0;
 let currentStroke: Stroke | null = null;
-let displayList: Stroke[] = [];
-let redoStack: Stroke[] = [];
+const displayList: Stroke[] = [];
+const commandStack: Command[] = [];
+const redoStack: Command[] = [];
 let brushColor = "black"; // Default color
 let brushSize = 1; // Default size
 let previousBrushSize = 1;
@@ -99,6 +100,59 @@ brushSizeInput.addEventListener("input", () => {
     updateBrushSize();
 });
 
+// Command Interface
+interface Command {
+    execute(): void;
+    undo(): void;
+}
+
+// Drawing Command
+class DrawCommand implements Command {
+    private lastStroke: Stroke | null = null; // To store the last stroke for redo
+
+    constructor(private stroke: Stroke, private displayList: Stroke[], private redraw: () => void) {}
+
+    execute() {
+        this.displayList.push(this.stroke);
+        this.lastStroke = this.stroke; // Store the stroke as the last drawn stroke
+        this.redraw();
+    }
+
+    undo() {
+        if (this.lastStroke) {
+            // Optionally store it for redo functionality if needed
+            this.displayList.pop(); // Remove the last stroke
+            this.redraw();
+        }
+    }
+
+    redo() {
+        if (this.lastStroke) {
+            this.displayList.push(this.lastStroke); // Re-add the last stroke
+            this.redraw();
+        }
+    }
+}
+
+// Clear Command
+class ClearCommand implements Command {
+    private previousState: Stroke[];
+
+    constructor(private displayList: Stroke[], private redraw: () => void) {
+        this.previousState = [...this.displayList]; // Store the current state for undo
+    }
+
+    execute() {
+        this.displayList.length = 0; // Clear the display list
+        this.redraw();
+    }
+
+    undo() {
+        this.displayList.push(...this.previousState); // Restore previous state
+        this.redraw();
+    }
+}
+
 // Function to start drawing
 canvas.addEventListener('mousedown', (e) => {
     x = e.offsetX;
@@ -133,15 +187,17 @@ canvas.addEventListener('mouseleave', () => {
     redrawFromDisplayList(); // Redraw strokes without the preview
 });
 
-
 globalThis.addEventListener("mouseup", () => {
     if (isDrawing && currentStroke) {
-        displayList.push(currentStroke); // Add the completed stroke to the display list
+        const drawCommand = new DrawCommand(currentStroke, displayList, redrawFromDisplayList);
+        drawCommand.execute();
+        commandStack.push(drawCommand); // Store the command for undo
+        redoStack.length = 0; // Clear the redo stack when a new action is performed
         currentStroke = null; // Reset current stroke
-        redrawFromDisplayList(); // Redraw all strokes
         isDrawing = false;
     }
 });
+
 
 // Helper function to redraw the canvas
 function redrawFromDisplayList() {
@@ -151,48 +207,38 @@ function redrawFromDisplayList() {
     displayList.forEach(stroke => stroke.display(context!)); // Redraw all strokes
 }
 
-// Interface for storing actions for buttons
-interface Actions {
-    name: string;
-    onClick: (() => void) | ((color: string) => void);
-    color: string | null;
-}
-
 // Create buttons for actions
-const buttons: Actions[] = [
+const buttons: { name: string; onClick: () => void; color: string | null; }[] = [
     { name: "undo", onClick: undoCanvas, color: null},
     { name: "redo", onClick: redoCanvas, color: null},
     { name: "clear", onClick: clearCanvas, color: null},
     { name: "export", onClick: exportCanvas, color: null},
-    { name: "red", onClick: changeColor, color: "#ff5c5c"},
-    { name: "green", onClick: changeColor, color: "#c7ff65"},
-    { name: "orange", onClick: changeColor, color: "#ffa860"},
-    { name: "blue", onClick: changeColor, color: "#6fbaff"},
-    { name: "yellow", onClick: changeColor, color: "#fff85e"},
-    { name: "purple", onClick: changeColor, color: "#c07dff"},
-    { name: "white", onClick: changeColor, color: "#ffffff"},
-    { name: "gray", onClick: changeColor, color: "#8a8c8d"},
-    { name: "black", onClick: changeColor, color: "#000000"},
-    { name: "brown", onClick: changeColor, color: "#724e2c"},
+    { name: "red", onClick: () => changeColor("#ff5c5c"), color: "#ff5c5c"},
+    { name: "green", onClick: () => changeColor("#c7ff65"), color: "#c7ff65"},
+    { name: "orange", onClick: () => changeColor("#ffa860"), color: "#ffa860"},
+    { name: "blue", onClick: () => changeColor("#6fbaff"), color: "#6fbaff"},
+    { name: "yellow", onClick: () => changeColor("#fff85e"), color: "#fff85e"},
+    { name: "purple", onClick: () => changeColor("#c07dff"), color: "#c07dff"},
+    { name: "white", onClick: () => changeColor("#ffffff"), color: "#ffffff"},
+    { name: "gray", onClick: () => changeColor("#8a8c8d"), color: "#8a8c8d"},
+    { name: "black", onClick: () => changeColor("#000000"), color: "#000000"},
+    { name: "brown", onClick: () => changeColor("#724e2c"), color: "#724e2c"},
 ];
 
 // Create buttons
 buttons.forEach(({ name, onClick, color }) => {
+    const button = document.createElement("button");
     if (color) {
-        const button = document.createElement("button");
         button.style.backgroundColor = color;
-        button.addEventListener("click", () => onClick(color));
-        colorContainer.appendChild(button);
-    }
-    else {
-        const button = document.createElement("button");
+        button.addEventListener("click", onClick);
+    } else {
         button.textContent = name;
-        button.addEventListener("click", () => (onClick as () => void)());
-        buttonContainer.appendChild(button);
+        button.addEventListener("click", onClick);
     }
+    (color ? colorContainer : buttonContainer).appendChild(button);
 });
 
-// append brush size after color buttons are created
+// Append brush size after color buttons are created
 colorContainer.appendChild(brushSizeInputContainer);
 wrapper.appendChild(buttonContainer);
 
@@ -204,36 +250,45 @@ function changeColor(color: string | null) {
 
 // Undo functionality
 function undoCanvas() {
-    if (displayList.length > 0) {
-        const lastStroke = displayList.pop();
-        if (lastStroke) {
-            redoStack.push(lastStroke);
-        }
-        redrawFromDisplayList();
+    const command = commandStack.pop();
+    if (command) {
+        command.undo();
+        redoStack.push(command); // Store for redo functionality
+    } else {
+        console.warn("No actions to undo."); // Optional: log a message if there's nothing to undo
     }
 }
+
 
 // Redo functionality
 function redoCanvas() {
-    if (redoStack.length > 0) {
-        const strokeToRedo = redoStack.pop();
-        if (strokeToRedo) {
-            displayList.push(strokeToRedo);
-        }
-        redrawFromDisplayList();
+    if (redoStack.length === 0) {
+        console.warn("No actions to redo."); // Optional: log a message if there's nothing to redo
+        return; // Early return if there's nothing to redo
+    }
+
+    const command = redoStack.pop();
+    if (command) {
+        command.execute(); // Execute the redo command
+        commandStack.push(command); // Optionally add it back to the command stack
     }
 }
 
-// Clear the canvas
+
+// Clear canvas using command
 function clearCanvas() {
-    context!.clearRect(0, 0, canvas.width, canvas.height);
-    context!.fillStyle = 'white'; // Set fill color
-    context!.fillRect(0, 0, canvas.width, canvas.height);
-    displayList = [];
-    redoStack = [];
+    const clearCommand = new ClearCommand(displayList, redrawFromDisplayList);
+    clearCommand.execute();
+    commandStack.push(clearCommand); // Store the command for undo
 }
 
-// Export canvas (placeholder function)
+// Export canvas as an image
 function exportCanvas() {
-    console.log("Export functionality not implemented yet");
+    // const link = document.createElement("a");
+    // link.download = "sketchpad.png";
+    // link.href = canvas.toDataURL(); // Get data URL of the canvas
+    // link.click(); // Trigger download
 }
+
+// Ensure correct resizing when changing brush size
+brushSizeInput.addEventListener("change", updateBrushSize);
