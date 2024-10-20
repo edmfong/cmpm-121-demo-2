@@ -132,12 +132,26 @@ canvas {
   height: 50px;
 }
 
+#emojiContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 60px;
+  margin-left: 20px;
+}
+
+#emojiContainer button {
+  width: 60px;
+  height: 50px;
+  text-align: center;
+}
+
 #wrapper {
   display: flex;
   align-items: flex-start; /* Align the controls to the top of the canvas */
   justify-content: center; /* Center contents inside the wrapper */
   position: relative; /* No need for absolute */
-  margin-left: calc(50%);
+  margin-left: calc(50% + 30px);
 }
 
 #brushSizeInputContainer input {

@@ -23,6 +23,11 @@ const colorContainer = document.createElement("div");
 colorContainer.id = "colorContainer";
 app.append(colorContainer);
 
+// Create a div to store the emojis
+const emojiContainer = document.createElement("div");
+emojiContainer.id = "emojiContainer";
+app.append(emojiContainer);
+
 // Create a wrapper for the canvas and color container
 const wrapper = document.createElement("div");
 wrapper.id = "wrapper";
@@ -30,6 +35,7 @@ wrapper.id = "wrapper";
 // Append canvas and color container to the wrapper
 wrapper.appendChild(canvas);
 wrapper.appendChild(colorContainer);
+wrapper.appendChild(emojiContainer);
 app.appendChild(wrapper);
 
 // Fill in canvas with white background
@@ -49,6 +55,7 @@ const redoStack: Command[] = [];
 let brushColor = "black"; // Default color
 let brushSize = 1; // Default size
 let previousBrushSize = 1;
+let selectedSticker: string | null = null;  // To store currently selected sticker
 
 let toolPreview: ToolPreview | null = null; // Nullable reference to the preview
 
@@ -153,33 +160,89 @@ class ClearCommand implements Command {
     }
 }
 
+// Sticker Preview Command
+class StickerPreviewCommand implements Command {
+    constructor(private x: number, private y: number, private sticker: string, private redraw: () => void) {}
+
+    execute() {
+        toolPreview = new ToolPreview(this.x, this.y, 32, 'transparent', this.sticker); // Show sticker preview
+        this.redraw();
+    }
+
+    undo() {
+        // No undo for preview, but could be added if needed
+    }
+}
+
+class PlaceStickerCommand implements Command {
+    private stickerX: number;
+    private stickerY: number;
+
+    constructor(private sticker: string, private displayList: Stroke[], private redraw: () => void, x: number, y: number) {
+        this.stickerX = x;
+        this.stickerY = y;
+    }
+
+    execute() {
+        const stroke = new Stroke(this.stickerX, this.stickerY, 'transparent', brushSize);  // Use 'transparent' color and size 0 for stickers
+        stroke.sticker = this.sticker; // Assign the sticker directly if needed
+        this.displayList.push(stroke);
+        this.redraw();
+    }
+
+    drag(x: number, y: number) {
+        this.stickerX = x;
+        this.stickerY = y;
+        this.redraw();
+    }
+
+    undo() {
+        this.displayList.pop();  // Undo placing the sticker
+        this.redraw();
+    }
+}
+
 // Function to start drawing
 canvas.addEventListener('mousedown', (e) => {
-    x = e.offsetX;
-    y = e.offsetY;
-    isDrawing = true;
-    currentStroke = new Stroke(x, y, brushColor, brushSize); // Pass color and size
-    toolPreview = null; // Hide the preview when the mouse is down
+    if (selectedSticker) {
+        const placeStickerCommand = new PlaceStickerCommand(selectedSticker, displayList, redrawFromDisplayList, e.offsetX, e.offsetY);
+        placeStickerCommand.execute();
+        commandStack.push(placeStickerCommand);  // Add to command stack for undo
+        selectedSticker = null;  // Clear sticker after placing
+    }
+    else {
+        x = e.offsetX;
+        y = e.offsetY;
+        isDrawing = true;
+        currentStroke = new Stroke(x, y, brushColor, brushSize); // Pass color and size
+        toolPreview = null; // Hide the preview when the mouse is down
+    }
+    
 });
 
 canvas.addEventListener('mousemove', (e) => {
     x = e.offsetX;
     y = e.offsetY;
-    
-    if (isDrawing && currentStroke) {
+
+    if (selectedSticker) {
+        toolPreview = new ToolPreview(x, y, brushSize, brushColor, selectedSticker);
+        redrawFromDisplayList(); // Redraw existing strokes
+        toolPreview.draw(context!); // Draw the sticker preview
+    } else if (isDrawing && currentStroke) {
         currentStroke.drag(x, y); // Add points to the stroke
 
         // Redraw to show the current stroke while dragging
         redrawFromDisplayList(); // Redraw all existing strokes
         currentStroke.display(context!); // Display the current stroke
-    } 
-    else {
+    } else {
         // Show tool preview if not drawing
-        toolPreview = new ToolPreview(x, y, brushSize, brushColor);
+        toolPreview = new ToolPreview(x, y, brushSize, brushColor, null); // Set to null for brush preview
         redrawFromDisplayList();
-        toolPreview.draw(context!); // Draw the preview
+        toolPreview.draw(context!); // Draw the brush preview
     }
 });
+
+
 
 // Mouse leave event to remove the preview when the cursor leaves the canvas
 canvas.addEventListener('mouseleave', () => {
@@ -208,34 +271,44 @@ function redrawFromDisplayList() {
 }
 
 // Create buttons for actions
-const buttons: { name: string; onClick: () => void; color: string | null; }[] = [
-    { name: "undo", onClick: undoCanvas, color: null},
-    { name: "redo", onClick: redoCanvas, color: null},
-    { name: "clear", onClick: clearCanvas, color: null},
-    { name: "export", onClick: exportCanvas, color: null},
-    { name: "red", onClick: () => changeColor("#ff5c5c"), color: "#ff5c5c"},
-    { name: "green", onClick: () => changeColor("#c7ff65"), color: "#c7ff65"},
-    { name: "orange", onClick: () => changeColor("#ffa860"), color: "#ffa860"},
-    { name: "blue", onClick: () => changeColor("#6fbaff"), color: "#6fbaff"},
-    { name: "yellow", onClick: () => changeColor("#fff85e"), color: "#fff85e"},
-    { name: "purple", onClick: () => changeColor("#c07dff"), color: "#c07dff"},
-    { name: "white", onClick: () => changeColor("#ffffff"), color: "#ffffff"},
-    { name: "gray", onClick: () => changeColor("#8a8c8d"), color: "#8a8c8d"},
-    { name: "black", onClick: () => changeColor("#000000"), color: "#000000"},
-    { name: "brown", onClick: () => changeColor("#724e2c"), color: "#724e2c"},
+const buttons: { name: string; onClick: () => void; color: string | null; sticker: string | null; }[] = [
+    { name: "undo", onClick: undoCanvas, color: null, sticker: null},
+    { name: "redo", onClick: redoCanvas, color: null, sticker: null},
+    { name: "clear", onClick: clearCanvas, color: null, sticker: null},
+    { name: "export", onClick: exportCanvas, color: null, sticker: null},
+    { name: "red", onClick: () => changeColor("#ff5c5c"), color: "#ff5c5c", sticker: null},
+    { name: "green", onClick: () => changeColor("#c7ff65"), color: "#c7ff65", sticker: null},
+    { name: "orange", onClick: () => changeColor("#ffa860"), color: "#ffa860", sticker: null},
+    { name: "blue", onClick: () => changeColor("#6fbaff"), color: "#6fbaff", sticker: null},
+    { name: "yellow", onClick: () => changeColor("#fff85e"), color: "#fff85e", sticker: null},
+    { name: "purple", onClick: () => changeColor("#c07dff"), color: "#c07dff", sticker: null},
+    { name: "white", onClick: () => changeColor("#ffffff"), color: "#ffffff", sticker: null},
+    { name: "gray", onClick: () => changeColor("#8a8c8d"), color: "#8a8c8d", sticker: null},
+    { name: "black", onClick: () => changeColor("#000000"), color: "#000000", sticker: null},
+    { name: "brown", onClick: () => changeColor("#724e2c"), color: "#724e2c", sticker: null},
+    { name: "sticker1", onClick: () => selectSticker("🐀"), color: null, sticker: "🐀"},
+    { name: "sticker2", onClick: () => selectSticker("🐒"), color: null, sticker: "🐒"},
+    { name: "sticker3", onClick: () => selectSticker("🦆"), color: null, sticker: "🦆"},
 ];
 
 // Create buttons
-buttons.forEach(({ name, onClick, color }) => {
+buttons.forEach(({ name, onClick, color , sticker}) => {
     const button = document.createElement("button");
     if (color) {
         button.style.backgroundColor = color;
         button.addEventListener("click", onClick);
-    } else {
+        (colorContainer).appendChild(button)
+    }
+    else if (sticker) {
+        button.textContent = sticker;
+        button.addEventListener("click", onClick);
+        (emojiContainer).appendChild(button)
+    } 
+    else {
         button.textContent = name;
         button.addEventListener("click", onClick);
+        (buttonContainer).appendChild(button)
     }
-    (color ? colorContainer : buttonContainer).appendChild(button);
 });
 
 // Append brush size after color buttons are created
@@ -288,6 +361,12 @@ function exportCanvas() {
     // link.download = "sketchpad.png";
     // link.href = canvas.toDataURL(); // Get data URL of the canvas
     // link.click(); // Trigger download
+}
+
+// Function to handle sticker selection
+function selectSticker(sticker: string) {
+    selectedSticker = sticker;
+    toolPreview = null; // Reset other previews if any
 }
 
 // Ensure correct resizing when changing brush size
