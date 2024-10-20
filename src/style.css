@@ -135,15 +135,22 @@ canvas {
 #emojiContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  width: 60px;
-  margin-left: 20px;
+  gap: calc((256px - (4 * 60px)) / 3);
 }
 
 #emojiContainer button {
   width: 60px;
   height: 50px;
   text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#emojiCanvasWrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 256px;
 }
 
 #wrapper {
@@ -151,7 +158,7 @@ canvas {
   align-items: flex-start; /* Align the controls to the top of the canvas */
   justify-content: center; /* Center contents inside the wrapper */
   position: relative; /* No need for absolute */
-  margin-left: calc(50% + 30px);
+  margin-left: calc(50%);
 }
 
 #brushSizeInputContainer input {

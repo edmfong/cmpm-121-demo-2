@@ -13,6 +13,7 @@ export class ToolPreview {
             const centeredY = this.y + textHeight / 2; // Adjust for baseline
         
             // Draw the sticker at the centered position
+            ctx.fillStyle = this.brushColor; // Use the stroke's color
             ctx.fillText(this.sticker, centeredX, centeredY);
         } else {
             // Draw the brush preview if no sticker is selected

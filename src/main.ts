@@ -32,10 +32,16 @@ app.append(emojiContainer);
 const wrapper = document.createElement("div");
 wrapper.id = "wrapper";
 
+// Create a wrapper for the canvas and emojis only
+const emojiCanvasWrapper = document.createElement("div");
+emojiCanvasWrapper.id = "emojiCanvasWrapper";
+
+emojiCanvasWrapper.appendChild(canvas);
+emojiCanvasWrapper.appendChild(emojiContainer);
+
 // Append canvas and color container to the wrapper
-wrapper.appendChild(canvas);
+wrapper.append(emojiCanvasWrapper);
 wrapper.appendChild(colorContainer);
-wrapper.appendChild(emojiContainer);
 app.appendChild(wrapper);
 
 // Fill in canvas with white background
@@ -160,32 +166,27 @@ class ClearCommand implements Command {
     }
 }
 
-// Sticker Preview Command
-class StickerPreviewCommand implements Command {
-    constructor(private x: number, private y: number, private sticker: string, private redraw: () => void) {}
-
-    execute() {
-        toolPreview = new ToolPreview(this.x, this.y, 32, 'transparent', this.sticker); // Show sticker preview
-        this.redraw();
-    }
-
-    undo() {
-        // No undo for preview, but could be added if needed
-    }
-}
-
 class PlaceStickerCommand implements Command {
     private stickerX: number;
     private stickerY: number;
+    private stickerSize: number; // Add property to hold sticker size
 
-    constructor(private sticker: string, private displayList: Stroke[], private redraw: () => void, x: number, y: number) {
+    constructor(
+        private sticker: string,
+        private displayList: Stroke[],
+        private redraw: () => void,
+        x: number,
+        y: number,
+        size: number // Accept size as a parameter
+    ) {
         this.stickerX = x;
         this.stickerY = y;
+        this.stickerSize = size; // Initialize sticker size
     }
 
     execute() {
-        const stroke = new Stroke(this.stickerX, this.stickerY, 'transparent', brushSize);  // Use 'transparent' color and size 0 for stickers
-        stroke.sticker = this.sticker; // Assign the sticker directly if needed
+        const stroke = new Stroke(this.stickerX, this.stickerY, brushColor, this.stickerSize); // Pass the current brushColor
+        stroke.sticker = this.sticker;
         this.displayList.push(stroke);
         this.redraw();
     }
@@ -197,15 +198,16 @@ class PlaceStickerCommand implements Command {
     }
 
     undo() {
-        this.displayList.pop();  // Undo placing the sticker
+        this.displayList.pop(); // Undo placing the sticker
         this.redraw();
     }
 }
 
+
 // Function to start drawing
 canvas.addEventListener('mousedown', (e) => {
     if (selectedSticker) {
-        const placeStickerCommand = new PlaceStickerCommand(selectedSticker, displayList, redrawFromDisplayList, e.offsetX, e.offsetY);
+        const placeStickerCommand = new PlaceStickerCommand(selectedSticker, displayList, redrawFromDisplayList, e.offsetX, e.offsetY, brushSize);
         placeStickerCommand.execute();
         commandStack.push(placeStickerCommand);  // Add to command stack for undo
         selectedSticker = null;  // Clear sticker after placing
@@ -286,6 +288,7 @@ const buttons: { name: string; onClick: () => void; color: string | null; sticke
     { name: "gray", onClick: () => changeColor("#8a8c8d"), color: "#8a8c8d", sticker: null},
     { name: "black", onClick: () => changeColor("#000000"), color: "#000000", sticker: null},
     { name: "brown", onClick: () => changeColor("#724e2c"), color: "#724e2c", sticker: null},
+    { name: "newSticker", onClick: newSticker, color: null, sticker: "+"},
     { name: "sticker1", onClick: () => selectSticker("🐀"), color: null, sticker: "🐀"},
     { name: "sticker2", onClick: () => selectSticker("🐒"), color: null, sticker: "🐒"},
     { name: "sticker3", onClick: () => selectSticker("🦆"), color: null, sticker: "🦆"},
@@ -368,6 +371,25 @@ function selectSticker(sticker: string) {
     selectedSticker = sticker;
     toolPreview = null; // Reset other previews if any
 }
+
+// adds a new sticker
+function newSticker() {
+    const sticker = prompt("Enter the sticker character:");
+
+    if (sticker) { // Check if the sticker is not null or empty
+        const button = document.createElement("button");
+        button.textContent = sticker;
+        console.log()
+
+        // Use an arrow function to pass the sticker to selectSticker
+        button.addEventListener("click", () => selectSticker(sticker)); 
+
+        emojiContainer.appendChild(button); // Append the button to the emoji container
+    } else {
+        console.warn("No sticker character entered."); // Optional: log a message if input is invalid
+    }
+}
+
 
 // Ensure correct resizing when changing brush size
 brushSizeInput.addEventListener("change", updateBrushSize);

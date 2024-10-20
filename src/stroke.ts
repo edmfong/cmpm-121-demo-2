@@ -25,10 +25,10 @@ export class Stroke {
             const x = this.points[0].x - textWidth / 2;
             const y = this.points[0].y + textHeight / 2; // Adjust for baseline
     
-            // Draw the sticker at the centered position
+            ctx.fillStyle = this.color; // Use the stroke's color
             ctx.fillText(this.sticker, x, y);
-        }
-        else if (this.points.length < 2) return;
+        } else if (this.points.length < 2) return;
+        
         ctx.beginPath();
         ctx.strokeStyle = this.color; // Use the stroke's color
         ctx.lineWidth = this.size; // Use the stroke's size
@@ -38,5 +38,5 @@ export class Stroke {
         }
         ctx.stroke();
         ctx.closePath();
-    }
+    }    
 }
