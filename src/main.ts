@@ -360,10 +360,10 @@ function clearCanvas() {
 
 // Export canvas as an image
 function exportCanvas() {
-    // const link = document.createElement("a");
-    // link.download = "sketchpad.png";
-    // link.href = canvas.toDataURL(); // Get data URL of the canvas
-    // link.click(); // Trigger download
+    const link = document.createElement("a");
+    link.download = "sketchpad.png";
+    link.href = canvas.toDataURL(); // Get data URL of the canvas
+    link.click(); // Trigger download
 }
 
 // Function to handle sticker selection
