@@ -390,6 +390,5 @@ function newSticker() {
     }
 }
 
-
 // Ensure correct resizing when changing brush size
 brushSizeInput.addEventListener("change", updateBrushSize);
