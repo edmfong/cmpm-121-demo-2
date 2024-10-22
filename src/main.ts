@@ -50,6 +50,16 @@ context!.clearRect(0, 0, canvas.width, canvas.height);
 context!.fillStyle = 'white'; // Set fill color
 context!.fillRect(0, 0, 256, 256);
 
+// colors and stickers
+const colors = [
+    "#ff5c5c", "#c7ff65", "#ffa860", "#6fbaff", "#fff85e", "#c07dff",
+    "#ffffff", "#8a8c8d", "#000000", "#724e2c"
+];
+
+const stickers = [
+    "🐀", "🐒", "🦆",
+];
+
 // Variables for drawing state
 let isDrawing = false;
 let x = 0;
@@ -379,16 +389,40 @@ function newSticker() {
     if (sticker) { // Check if the sticker is not null or empty
         const button = document.createElement("button");
         button.textContent = sticker;
-        console.log()
+
 
         // Use an arrow function to pass the sticker to selectSticker
         button.addEventListener("click", () => selectSticker(sticker)); 
 
         emojiContainer.appendChild(button); // Append the button to the emoji container
-    } else {
-        console.warn("No sticker character entered."); // Optional: log a message if input is invalid
+
+        stickers.push(sticker);
     }
+}
+
+// Function to randomize brush color and sticker
+function randomizeSticker() {
+    const randomSticker = stickers[Math.floor(Math.random() * stickers.length)];
+    selectSticker(randomSticker);
+}
+
+function randomizeColor() {
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    changeColor(randomColor);
 }
 
 // Ensure correct resizing when changing brush size
 brushSizeInput.addEventListener("change", updateBrushSize);
+
+// Add a new button to trigger randomization
+const randButtonContainer = document.createElement("div");
+randButtonContainer.id = "randButtonContainer";
+buttonContainer.append(randButtonContainer);
+const randomColorButton = document.createElement("button");
+randomColorButton.textContent = "rand color";
+randomColorButton.addEventListener("click", randomizeColor);
+randButtonContainer.appendChild(randomColorButton);
+const randomStickerButton = document.createElement("button");
+randomStickerButton.textContent = "rand sticker";
+randomStickerButton.addEventListener("click", randomizeSticker);
+randButtonContainer.appendChild(randomStickerButton);

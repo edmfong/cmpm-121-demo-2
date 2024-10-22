@@ -18,10 +18,13 @@ export class ToolPreview {
         } else {
             // Draw the brush preview if no sticker is selected
             ctx.beginPath();
-            ctx.strokeStyle = this.brushColor;
-            ctx.lineWidth = 2;
+            ctx.fillStyle = this.brushColor; // Set fill color
             ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
-            ctx.stroke();
+            ctx.fill(); // Fill the circle with brushColor
+
+            ctx.strokeStyle = "black"; // Set outline color
+            ctx.lineWidth = 1; // Set line width for the outline
+            ctx.stroke(); // Draw the outline
             ctx.closePath();
         }
     }
