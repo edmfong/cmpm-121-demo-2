@@ -7,6 +7,15 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_NAME;
 
+const spinner = document.querySelector<HTMLDivElement>("#spinner")!;
+spinner.style.display = "block";
+
+// Create loading overlay
+const loadingOverlay = document.createElement("div");
+loadingOverlay.id = "loadingOverlay";
+document.body.appendChild(loadingOverlay);
+
+
 // Create title
 const h1: HTMLElement = document.createElement('h1');
 h1.textContent = 'Sketchpad';
@@ -421,3 +430,9 @@ const randomStickerButton = document.createElement("button");
 randomStickerButton.textContent = "rand sticker";
 randomStickerButton.addEventListener("click", randomizeSticker);
 randButtonContainer.appendChild(randomStickerButton);
+
+// Simulate loading delay
+setTimeout(() => {
+    spinner.style.display = "none";
+    loadingOverlay.remove(); // Remove the overlay
+}, 2000); // 2 seconds delay
