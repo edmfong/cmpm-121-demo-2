@@ -18,15 +18,16 @@ canvas.width = 256;
 canvas.height = 256;
 app.appendChild(canvas);
 
-// Create a div to store the colors
-const colorContainer = document.createElement("div");
-colorContainer.id = "colorContainer";
-app.append(colorContainer);
+function createDiv(id: string) {
+    const div = document.createElement("div");
+    div.id = id;
+    app.appendChild(div);
+    return div;
+}
 
-// Create a div to store the emojis
-const emojiContainer = document.createElement("div");
-emojiContainer.id = "emojiContainer";
-app.append(emojiContainer);
+const colorContainer = createDiv("colorContainer");
+
+const emojiContainer = createDiv("emojiContainer");
 
 // Create a wrapper for the canvas and color container
 const wrapper = document.createElement("div");
@@ -48,9 +49,11 @@ app.appendChild(wrapper);
 const context: CanvasRenderingContext2D | null = canvas.getContext('2d');
 context!.clearRect(0, 0, canvas.width, canvas.height);
 context!.fillStyle = 'white'; // Set fill color
-context!.fillRect(0, 0, 256, 256);
+context!.fillRect(0, 0, canvas.width, canvas.height);
 
 // colors and stickers
+const colorNames = [ "red", "green", "orange", "blue", "yellow", "purple", "white", "gray", "black", "brown"];
+
 const colors = [
     "#ff5c5c", "#c7ff65", "#ffa860", "#6fbaff", "#fff85e", "#c07dff",
     "#ffffff", "#8a8c8d", "#000000", "#724e2c"
@@ -75,10 +78,7 @@ let selectedSticker: string | null = null;  // To store currently selected stick
 
 let toolPreview: ToolPreview | null = null; // Nullable reference to the preview
 
-// Create a div to store the buttons
-const buttonContainer = document.createElement("div");
-buttonContainer.id = "buttonContainer";
-app.append(buttonContainer);
+const buttonContainer = createDiv("buttonContainer");
 
 // Create a div to store the brush size
 const brushSizeInputContainer = document.createElement("div");
@@ -288,21 +288,16 @@ const buttons: { name: string; onClick: () => void; color: string | null; sticke
     { name: "redo", onClick: redoCanvas, color: null, sticker: null},
     { name: "clear", onClick: clearCanvas, color: null, sticker: null},
     { name: "export", onClick: exportCanvas, color: null, sticker: null},
-    { name: "red", onClick: () => changeColor("#ff5c5c"), color: "#ff5c5c", sticker: null},
-    { name: "green", onClick: () => changeColor("#c7ff65"), color: "#c7ff65", sticker: null},
-    { name: "orange", onClick: () => changeColor("#ffa860"), color: "#ffa860", sticker: null},
-    { name: "blue", onClick: () => changeColor("#6fbaff"), color: "#6fbaff", sticker: null},
-    { name: "yellow", onClick: () => changeColor("#fff85e"), color: "#fff85e", sticker: null},
-    { name: "purple", onClick: () => changeColor("#c07dff"), color: "#c07dff", sticker: null},
-    { name: "white", onClick: () => changeColor("#ffffff"), color: "#ffffff", sticker: null},
-    { name: "gray", onClick: () => changeColor("#8a8c8d"), color: "#8a8c8d", sticker: null},
-    { name: "black", onClick: () => changeColor("#000000"), color: "#000000", sticker: null},
-    { name: "brown", onClick: () => changeColor("#724e2c"), color: "#724e2c", sticker: null},
     { name: "newSticker", onClick: newSticker, color: null, sticker: "+"},
-    { name: "sticker1", onClick: () => selectSticker("🐀"), color: null, sticker: "🐀"},
-    { name: "sticker2", onClick: () => selectSticker("🐒"), color: null, sticker: "🐒"},
-    { name: "sticker3", onClick: () => selectSticker("🦆"), color: null, sticker: "🦆"},
 ];
+
+for (let i = 0; i < colorNames.length; i++) {
+    buttons.push({ name: `${colorNames[i]}`, onClick: () => changeColor(`${colors[i]}`), color: `${colors[i]}`, sticker: null });
+}
+
+for (let i = 0; i < stickers.length; i++) {
+    buttons.push({ name: `sticker${i}`, onClick: () => selectSticker(`${stickers[i]}`), color: null, sticker: `${stickers[i]}` });
+}
 
 // Create buttons
 buttons.forEach(({ name, onClick, color , sticker}) => {
